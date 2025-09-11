@@ -21,6 +21,7 @@ vim.opt.rtp:prepend(lazypath)
 -- leader = space
 vim.g.mapleader = " "
 
+
 -- bindings 
 -- move selected text
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
@@ -37,6 +38,7 @@ vim.keymap.set("n", "<leader>vs", vim.cmd.vsplit)
 vim.keymap.set("n", "<leader>hs", vim.cmd.split)
 -- terminal
 vim.keymap.set("n", "<leader>tw", vim.cmd.terminal)
+vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
 
 -- options
 vim.opt.guicursor = ""

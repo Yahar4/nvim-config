@@ -22,8 +22,6 @@ vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 
 -- bindings 
--- go back to tree view
-vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 -- move selected text
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
@@ -37,18 +35,14 @@ vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = 'Move to right window' })
 -- split win
 vim.keymap.set("n", "<leader>vs", vim.cmd.vsplit)
 vim.keymap.set("n", "<leader>hs", vim.cmd.split)
-
--- tabs
-vim.keymap.set("n", "<leader>tn", vim.cmd.tabnew)
-vim.keymap.set("n", "<leader>tc", vim.cmd.tabclose)
-vim.keymap.set("n", "b]", vim.cmd.tabnext)
-vim.keymap.set("n", "b[", vim.cmd.tabprev)
+-- terminal
+vim.keymap.set("n", "<leader>tw", vim.cmd.terminal)
 
 -- options
 vim.opt.guicursor = ""
 vim.opt.colorcolumn = "90"
-vim.opt.number = true
-vim.opt.relativenumber = true
+vim.opt.number = true 
+vim.opt.relativenumber = true 
 vim.opt.cursorline = true
 vim.opt.swapfile = false
 vim.opt.scrolloff = 8
@@ -77,6 +71,8 @@ require("lazy").setup({
         { import = "plugins.autoclose" },
         { import = "plugins.tree" },
         { import = "plugins.gitsigns" },
+        { import = "plugins.dap" },
+        { import = "plugins.lsp-lens" },
 
         {
             "mason-org/mason.nvim",

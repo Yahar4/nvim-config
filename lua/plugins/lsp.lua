@@ -2,8 +2,10 @@ return {
     "neovim/nvim-lspconfig",
     config = function()
         -- Set up LSP servers
-        local lspconfig = require('lspconfig')
-
+        vim.lsp.enable("pyright")
+        vim.lsp.enable("gopls")
+        vim.lsp.enable("clangd")
+       
         -- Define capabilities and on_attach function if not already defined
         local capabilities = vim.lsp.protocol.make_client_capabilities()
         local on_attach = function(client, bufnr)
@@ -17,12 +19,26 @@ return {
         end
 
         -- Python
-        lspconfig.pyright.setup({
+        local function get_python_path()
+            local cwd = vim.fn.getcwd()
+            local venv_path = cwd .. "/venv/bin/python"
+
+            -- Проверяем существует ли venv в текущем проекте
+            if vim.fn.filereadable(venv_path) == 1 then
+                return venv_path
+            end
+
+            -- Если нет, используем системный python3
+            return "python3"
+        end
+
+        vim.lsp.config("pyright", {
             filetypes = { "python" },
             capabilities = capabilities,
             on_attach = on_attach,
             settings = {
                 python = {
+                    pythonPath = get_python_path(),
                     analysis = {
                         autoSearchPaths = true,
                         autoImportCompletions = true,
@@ -34,7 +50,7 @@ return {
         })
 
         -- Golang
-        lspconfig.gopls.setup({
+        vim.lsp.config("gopls", {
             filetypes = { "go", "gomod", "gowork", "gotmpl" },
             on_attach = on_attach,
             capabilities = capabilities,
@@ -54,7 +70,7 @@ return {
         })
 
          -- Clangd for C/C++
-        lspconfig.clangd.setup({
+        vim.lsp.config("clangd", {
             capabilities = capabilities,
             on_attach = on_attach,
             cmd = {

@@ -75,6 +75,7 @@ require("lazy").setup({
         { import = "plugins.gitsigns" },
         { import = "plugins.dap" },
         { import = "plugins.lsp-lens" },
+        { import = "plugins.harpoon" },
 
         {
             "mason-org/mason.nvim",

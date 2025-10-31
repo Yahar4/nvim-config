@@ -1,13 +1,20 @@
 return {
     "neovim/nvim-lspconfig",
+    dependencies = {
+        "williamboman/mason.nvim",
+        "williamboman/mason-lspconfig.nvim",
+        "hrsh7th/cmp-nvim-lsp",
+    },
     config = function()
-        -- Set up LSP servers
-        vim.lsp.enable("pyright")
-        vim.lsp.enable("gopls")
-        vim.lsp.enable("clangd")
-       
-        -- Define capabilities and on_attach function if not already defined
-        local capabilities = vim.lsp.protocol.make_client_capabilities()
+        local cmp_lsp = require("cmp_nvim_lsp")
+        local capabilities = vim.tbl_deep_extend(
+            "force",
+            {},
+            vim.lsp.protocol.make_client_capabilities(),
+            cmp_lsp.default_capabilities()
+        )
+
+        -- Your existing hotkeys
         local on_attach = function(client, bufnr)
             local opts = { buffer = bufnr, silent = true }
             
@@ -15,91 +22,139 @@ return {
             vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
             vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
             vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-
         end
 
-        -- Python
-        local function get_python_path()
-            local cwd = vim.fn.getcwd()
-            local venv_path = cwd .. "/venv/bin/python"
-
-            -- Проверяем существует ли venv в текущем проекте
-            if vim.fn.filereadable(venv_path) == 1 then
-                return venv_path
-            end
-
-            -- Если нет, используем системный python3
-            return "python3"
-        end
-
-        vim.lsp.config("pyright", {
-            filetypes = { "python" },
-            capabilities = capabilities,
-            on_attach = on_attach,
-            settings = {
-                python = {
-                    pythonPath = get_python_path(),
-                    analysis = {
-                        autoSearchPaths = true,
-                        autoImportCompletions = true,
-                        useLibraryCodeForTypes = true,
-                        diagnosticMode = "workspace",
-                    },
-                },
+        require("mason").setup()
+        require("mason-lspconfig").setup({
+            ensure_installed = {
+                "lua_ls",
+                "rust_analyzer", 
+                "tsserver",
+                "pyright",      -- Added your Python LSP
+                "gopls",        -- Added your Go LSP
+                "clangd",       -- Added your C/C++ LSP
             },
-        })
+            handlers = {
+                function(server_name) -- default handler
+                    require("lspconfig")[server_name].setup {
+                        capabilities = capabilities,
+                        on_attach = on_attach
+                    }
+                end,
 
-        -- Golang
-        vim.lsp.config("gopls", {
-            filetypes = { "go", "gomod", "gowork", "gotmpl" },
-            on_attach = on_attach,
-            capabilities = capabilities,
-            settings = {
-                gopls = {
-                    usePlaceholders = true,
-                    staticcheck = true,
-                    analyses = {
-                        unusedparams = true,
-                        unusedvariables = true,
-                    },
-                    formatting = {
-                        gofumpt = true,
-                    },
-                },
-            },
-        })
+                ["lua_ls"] = function()
+                    require("lspconfig").lua_ls.setup {
+                        capabilities = capabilities,
+                        on_attach = on_attach,
+                        settings = {
+                            Lua = {
+                                diagnostics = {
+                                    globals = { "vim", "it", "describe", "before_each", "after_each" },
+                                }
+                            }
+                        }
+                    }
+                end,
 
-         -- Clangd for C/C++
-        vim.lsp.config("clangd", {
-            capabilities = capabilities,
-            on_attach = on_attach,
-            cmd = {
-                "clangd",
-                "--background-index",
-                "--clang-tidy",
-                "--header-insertion=iwyu",
-                "--completion-style=detailed",
-                "--function-arg-placeholders",
-                "--fallback-style=llvm",
-            },
-            filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
-            -- This makes sure clangd doesn't override the offset encoding
-            init_options = {
-                clangdFileStatus = true,
-                usePlaceholders = true,
-                completeUnimported = true,
-                semanticHighlighting = true,
+                -- Your custom Python configuration
+                ["pyright"] = function()
+                    local function get_python_path()
+                        local cwd = vim.fn.getcwd()
+                        local venv_path = cwd .. "/venv/bin/python"
+
+                        if vim.fn.filereadable(venv_path) == 1 then
+                            return venv_path
+                        end
+
+                        return "python3"
+                    end
+
+                    require("lspconfig").pyright.setup {
+                        capabilities = capabilities,
+                        on_attach = on_attach,
+                        settings = {
+                            python = {
+                                pythonPath = get_python_path(),
+                                analysis = {
+                                    autoSearchPaths = true,
+                                    autoImportCompletions = true,
+                                    useLibraryCodeForTypes = true,
+                                    diagnosticMode = "workspace",
+                                },
+                            },
+                        },
+                    }
+                end,
+
+                -- Your custom Go configuration
+                ["gopls"] = function()
+                    require("lspconfig").gopls.setup {
+                        capabilities = capabilities,
+                        on_attach = on_attach,
+                        settings = {
+                            gopls = {
+                                usePlaceholders = true,
+                                staticcheck = true,
+                                analyses = {
+                                    unusedparams = true,
+                                    unusedvariables = true,
+                                },
+                                formatting = {
+                                    gofumpt = true,
+                                },
+                            },
+                        },
+                    }
+                end,
+
+                -- Your custom C/C++ configuration
+                ["clangd"] = function()
+                    require("lspconfig").clangd.setup {
+                        capabilities = capabilities,
+                        on_attach = on_attach,
+                        cmd = {
+                            "clangd",
+                            "--background-index",
+                            "--clang-tidy", 
+                            "--header-insertion=iwyu",
+                            "--completion-style=detailed",
+                            "--function-arg-placeholders",
+                            "--fallback-style=llvm",
+                        },
+                        filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+                        init_options = {
+                            clangdFileStatus = true,
+                            usePlaceholders = true,
+                            completeUnimported = true,
+                            semanticHighlighting = true,
+                        }
+                    }
+                end,
             }
         })
 
-        -- autoformat on save for Go
-        vim.cmd [[autocmd BufWritePre *.go lua vim.lsp.buf.format({ async = true })]]
-
+        -- Your Go autoformat on save
         vim.api.nvim_create_autocmd('BufWritePre', {
-           pattern = '*.go',
+            pattern = '*.go',
             callback = function()
-                vim.lsp.buf.code_action({ context = { only = { 'source.organizeImports' } }, apply = true })
+                vim.lsp.buf.format({ async = true })
+                vim.lsp.buf.code_action({ 
+                    context = { only = { 'source.organizeImports' } }, 
+                    apply = true 
+                })
             end
         })
-    end,
+
+        -- Your diagnostic configuration
+        vim.diagnostic.config({
+            float = {
+                focusable = false,
+                style = "minimal", 
+                border = "rounded",
+                source = "always",
+                header = "",
+                prefix = "",
+            },
+        })
+    end
 }
